@@ -150,9 +150,10 @@
   `(binding [*bound-params* (atom [])]
      (let [query# (do ~@body)
            params# (if (:params query#)
-                     (concat (:params query#) @*bound-params*)
+                     (:params query#)
                      @*bound-params*)]
        (assoc query# :params params#))))
+
 ;;*****************************************************
 ;; Predicates
 ;;*****************************************************
