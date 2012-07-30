@@ -25,6 +25,9 @@
 (defentity users-alias
   (table :users :u))
 
+(defentity languages
+  (table :wikipedia.languages))
+
 (defentity blah (pk :cool) (has-many users {:fk :cool_id}))
 
 (deftest select-function
@@ -48,9 +51,10 @@
          (select users
                  (fields :id :username))
          "SELECT \"users\".\"id\", \"users\".\"username\" FROM \"users\""
-         (select :wikipedia.users
-                 (fields :id :username))
-         "SELECT \"wikipedia\".\"users\".\"id\", \"wikipedia\".\"users\".\"username\" FROM \"wikipedia\".\"users\""
+         (select languages)
+         "SELECT \"wikipedia\".\"languages\".* FROM \"wikipedia\".\"languages\""
+         (select :wikipedia.languages (fields :id :name))
+         "SELECT \"wikipedia\".\"languages\".\"id\", \"wikipedia\".\"languages\".\"name\" FROM \"wikipedia\".\"languages\""
          (select users
                  (where {:username "chris"
                          :email "hey@hey.com"}))
