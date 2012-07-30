@@ -71,6 +71,15 @@
               (delimit-str field-name)
               (string/join "." (map delimit-str parts))))))
 
+(defn table-str [v]
+  (if (utils/special-map? v)
+    (map-val v)
+    (let [tstr (cond
+                 (string? v) v
+                 (map? v) (:table v)
+                 :else (name v))]
+      (string/join "." (map delimit-str (string/split tstr #"\."))))))
+
 (defn prefix [ent field]
   (let [field-name (field-identifier field)]
     ;;check if it's already prefixed
@@ -80,7 +89,7 @@
       (let [table (if (string? ent)
                     ent
                     (table-alias ent))]
-        (str (delimit-str table) "." field-name))
+        (str (table-str table) "." field-name))
       field-name)))
 
 (defn try-prefix [v]
@@ -106,15 +115,6 @@
 
 (defn coll-str [v]
   (wrap-values v))
-
-(defn table-str [v]
-  (if (utils/special-map? v)
-    (map-val v)
-    (let [tstr (cond
-                 (string? v) v
-                 (map? v) (:table v)
-                 :else (name v))]
-      (delimit-str tstr))))
 
 (defn parameterize [v]
   (when *bound-params*

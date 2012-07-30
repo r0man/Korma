@@ -48,6 +48,9 @@
          (select users
                  (fields :id :username))
          "SELECT \"users\".\"id\", \"users\".\"username\" FROM \"users\""
+         (select :wikipedia.users
+                 (fields :id :username))
+         "SELECT \"wikipedia\".\"users\".\"id\", \"wikipedia\".\"users\".\"username\" FROM \"wikipedia\".\"users\""
          (select users
                  (where {:username "chris"
                          :email "hey@hey.com"}))
@@ -100,13 +103,19 @@
          "DELETE FROM \"users\""
          (delete users
                  (where {:id 3}))
-         "DELETE FROM \"users\" WHERE (\"users\".\"id\" = ?)")))
+         "DELETE FROM \"users\" WHERE (\"users\".\"id\" = ?)"
+         (delete :wikipedia.users
+                 (where {:id 3}))
+         "DELETE FROM \"wikipedia\".\"users\" WHERE (\"wikipedia\".\"users\".\"id\" = ?)")))
 
 (deftest insert-function
-  (is (= (-> (insert* "users")
-           (values {:first "chris" :last "granger"})
-           (as-sql))
-         "INSERT INTO \"users\" (\"last\", \"first\") VALUES (?, ?)")))
+  (are [query result] (is (= result (as-sql query)))
+       (-> (insert* "users")
+           (values {:first "chris" :last "granger"}))
+       "INSERT INTO \"users\" (\"last\", \"first\") VALUES (?, ?)"
+       (-> (insert* :wikipedia.users)
+           (values {:first "chris" :last "granger"}))
+       "INSERT INTO \"wikipedia\".\"users\" (\"last\", \"first\") VALUES (?, ?)"))
 
 (deftest insert-queries
   (sql-only
@@ -117,7 +126,11 @@
          (insert users
                  (values [{:first "chris" :last "granger"}
                           {:last "jordan" :first "michael"}]))
-         "INSERT INTO \"users\" (\"last\", \"first\") VALUES (?, ?), (?, ?)")))
+         "INSERT INTO \"users\" (\"last\", \"first\") VALUES (?, ?), (?, ?)"
+         (insert :wikipedia.users
+                 (values [{:first "chris" :last "granger"}
+                          {:last "jordan" :first "michael"}]))
+         "INSERT INTO \"wikipedia\".\"users\" (\"last\", \"first\") VALUES (?, ?), (?, ?)")))
 
 (deftest complex-where
   (sql-only
@@ -386,3 +399,13 @@
           q2 (where q1 (> :updated-at (java.sql.Timestamp. 0)))]
       (is (= "SELECT \"languages\".* FROM \"languages\" WHERE (\"languages\".\"family\" = ?) AND \"languages\".\"updated-at\" > ?"
              (sql-only (exec q2)))))))
+
+(deftest select-with-qualified-schema
+  (is (= (-> (select* :wikipedia.languages) (fields :id :name :family) (as-sql))
+         "SELECT \"wikipedia\".\"languages\".\"id\", \"wikipedia\".\"languages\".\"name\", \"wikipedia\".\"languages\".\"family\" FROM \"wikipedia\".\"languages\""))
+  (is (= (-> (select* :freebase.languages)
+             (join :wikipedia.languages (= :freebase.languages.name :wikipedia.languages.name))
+             (as-sql))
+         "SELECT \"freebase\".\"languages\".* FROM \"freebase\".\"languages\" LEFT JOIN \"wikipedia\".\"languages\" ON \"freebase\".\"languages\".\"name\" = \"wikipedia\".\"languages\".\"name\"")))
+
+
