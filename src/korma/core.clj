@@ -5,10 +5,23 @@
             [korma.sql.utils :as utils]
             [clojure.set :as set]
             [korma.db :as db])
-  (:use [korma.sql.engine :only [bind-query bind-params]]))
+  (:use [korma.sql.engine :only [bind-query bind-params]]
+        [clojure.string :only [blank? split]]))
 
 (def ^{:dynamic true} *exec-mode* false)
 (declare get-rel)
+
+(defn parse-table
+  "Parse `table` and return the schema and name of the table as a vector."
+  [s]
+  (let [parts (split (str (if s (name s) s)) #"\.")]
+    (cond
+     (and (= 1 (count parts))
+          (not (blank? (first parts))))
+     [nil (keyword (first parts))]
+     (and (= 2 (count parts))
+          (every? (complement blank?) parts))
+     (apply vector (map keyword parts)))))
 
 ;;*****************************************************
 ;; Query types

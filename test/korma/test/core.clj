@@ -411,3 +411,13 @@
              (join :wikipedia.languages (= :freebase.languages.name :wikipedia.languages.name))
              (as-sql))
          "SELECT \"freebase\".\"languages\".* FROM \"freebase\".\"languages\" LEFT JOIN \"wikipedia\".\"languages\" ON \"freebase\".\"languages\".\"name\" = \"wikipedia\".\"languages\".\"name\"")))
+
+(deftest test-parse-table
+  (are [table expected]
+       (is (= expected (parse-table table)))
+       nil nil
+       "" nil
+       :continents [nil :continents]
+       :public.continents [:public :continents]
+       "continents" [nil :continents]
+       "public.continents" [:public :continents]))
