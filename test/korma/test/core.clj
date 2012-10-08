@@ -168,7 +168,7 @@
 
 (deftest with-many
   (with-out-str
-    (dry-run 
+    (dry-run
       (is (= (select user2
                      (with email))
              [{:id 1 :email [{:id 1}]}])))))
@@ -182,7 +182,7 @@
 
 (deftest join-order
   (sql-only
-    (is (= (select users 
+    (is (= (select users
                    (join :user2 (= :users.id :user2.users_id))
                    (join :user3 (= :users.id :user3.users_id)))
            "SELECT \"users\".* FROM \"users\" LEFT JOIN \"user2\" ON \"users\".\"id\" = \"user2\".\"users_id\" LEFT JOIN \"user3\" ON \"users\".\"id\" = \"user3\".\"users_id\""))))
@@ -207,7 +207,7 @@
 
 (deftest sqlfns
   (sql-only
-    (is (= (select users 
+    (is (= (select users
                    (fields [(sqlfn now) :now] (sqlfn max :blah) (sqlfn avg (sqlfn sum 3 4) (sqlfn sum 4 5)))
                    (where {:time [>= (sqlfn now)]}))
            "SELECT NOW() \"now\", MAX(\"users\".\"blah\"), AVG(SUM(?, ?), SUM(?, ?)) FROM \"users\" WHERE (\"users\".\"time\" >= NOW())"))))
@@ -367,9 +367,9 @@
     (table (subselect "test") :test))
 
   ;;This kind of entity needs and alias.
-  (is (thrown? Exception 
-               (defentity subsel2 
-                 (table (subselect "test"))))) 
+  (is (thrown? Exception
+               (defentity subsel2
+                 (table (subselect "test")))))
 
   (are [query result] (= query result)
        (sql-only
@@ -377,7 +377,7 @@
        "SELECT \"test\".* FROM (SELECT \"test\".* FROM \"test\") \"test\""))
 
 (deftest multiple-aliases
-  (defentity blahblah 
+  (defentity blahblah
     (table :blah :bb))
 
   (sql-only
@@ -411,5 +411,3 @@
              (join :wikipedia.languages (= :freebase.languages.name :wikipedia.languages.name))
              (as-sql))
          "SELECT \"freebase\".\"languages\".* FROM \"freebase\".\"languages\" LEFT JOIN \"wikipedia\".\"languages\" ON \"freebase\".\"languages\".\"name\" = \"wikipedia\".\"languages\".\"name\"")))
-
-
