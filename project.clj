@@ -15,7 +15,6 @@
   :codox {:exclude [korma.sql.engine korma.sql.fns korma.sql.utils]}
   :plugins [[environ/environ.lein "0.3.0"]]
   :hooks [environ.leiningen.hooks]
-  :test-selectors {:all (constantly true)
-                   :mysql :mysql
+  :test-selectors {:mysql :mysql
                    :postgresql :postgresql
                    :sqlite :sqlite})
