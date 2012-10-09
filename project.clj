@@ -9,9 +9,13 @@
   :profiles {:dev {:env {:mysql "mysql://korma@localhost/korma"
                          :postgresql "postgresql://localhost/korma"
                          :sqlite "sqlite://tmp/korma"}
-                   :dependencies [[mysql/mysql-connector-java "5.1.6"]
-                                  [postgresql "9.0-801.jdbc4"]
+                   :dependencies [[mysql/mysql-connector-java "5.1.21"]
+                                  [postgresql "9.1-901.jdbc4"]
                                   [org.xerial/sqlite-jdbc "3.7.2"]]}}
   :codox {:exclude [korma.sql.engine korma.sql.fns korma.sql.utils]}
   :plugins [[environ/environ.lein "0.3.0"]]
-  :hooks [environ.leiningen.hooks])
+  :hooks [environ.leiningen.hooks]
+  :test-selectors {:all (constantly true)
+                   :mysql :mysql
+                   :postgresql :postgresql
+                   :sqlite :sqlite})
