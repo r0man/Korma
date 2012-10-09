@@ -1,5 +1,5 @@
 (ns korma.util
-  (:require [clojure.string :refer [blank? split]]))
+  (:use [clojure.string :only [blank? split]]))
 
 (defmacro defn-memo
   "Just like defn, but memoizes the function using clojure.core/memoize"
