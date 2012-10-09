@@ -1,7 +1,6 @@
 (ns korma.connection
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
   (:require [clojure.java.jdbc :as jdbc]
-            [clojure.string :refer [blank?]]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
             [korma.util :refer [defn-memo parse-db-url parse-integer]]))
