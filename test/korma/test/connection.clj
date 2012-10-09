@@ -24,7 +24,6 @@
       (.close datasource))))
 
 (deftest test-resolve-connection
-  (prn (:vendor *database*))
   (is (= (connection-url (:vendor *database*))
          (resolve-connection (:vendor *database*))))
   (is (= (connection-url (:vendor *database*))
