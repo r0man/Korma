@@ -254,13 +254,15 @@
 
 (deftest modifiers
   (sql-only
-   (are [query result] (= query result)
+   (are [query result]
+        (= query result)
         (-> (select* "users")
             (fields :name)
-            (modifier "DISTINCT")))
-   "SELECT DISTINCT \"users\".\"name\" FROM \"users\""
-   (select user2 (modifier "TOP 5"))
-   "SELECT TOP 5 \"users\".* FROM \"users\""))
+            (modifier "DISTINCT")
+            (exec))
+        "SELECT DISTINCT \"users\".\"name\" FROM \"users\""
+        (select user2 (modifier "TOP 5"))
+        "SELECT TOP 5 \"users\".* FROM \"users\"")))
 
 (deftest delimiters
   (set-delimiters "`")

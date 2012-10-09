@@ -1,8 +1,17 @@
 (defproject org.clojars.r0man/korma "0.3.0-beta11"
   :description "Tasty SQL for Clojure"
   :url "http://github.com/ibdknox/korma"
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[environ "0.3.0"]
                  [c3p0/c3p0 "0.9.1.2"]
+                 [inflections "0.7.3"]
+                 [org.clojure/clojure "1.4.0"]
                  [org.clojure/java.jdbc "0.2.3"]]
+  :profiles {:dev {:env {:mysql "mysql://korma@localhost/korma"
+                         :postgresql "postgresql://localhost/korma"
+                         :sqlite "sqlite://tmp/korma"}
+                   :dependencies [[mysql/mysql-connector-java "5.1.6"]
+                                  [postgresql "9.0-801.jdbc4"]
+                                  [org.xerial/sqlite-jdbc "3.7.2"]]}}
   :codox {:exclude [korma.sql.engine korma.sql.fns korma.sql.utils]}
-          :dev-dependencies [[postgresql "9.0-801.jdbc4"]])
+  :plugins [[environ/environ.lein "0.3.0"]]
+  :hooks [environ.leiningen.hooks])
