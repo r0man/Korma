@@ -49,7 +49,7 @@
          (.setMaxIdleTime (parse-integer (:max-idle-time params)))
          (.setMaxPoolSize (parse-integer (:max-pool-size params)))
          (.setMinPoolSize (parse-integer (:min-pool-size params))))})
-    (throw (illegal-argument-exception "Can't find connection pool: %s" database))))
+    (illegal-argument-exception "Can't find connection pool: %s" database)))
 
 (defmacro with-connection
   "Evaluates body in the context of a connection to the database
