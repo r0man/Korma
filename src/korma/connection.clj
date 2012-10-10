@@ -1,5 +1,4 @@
 (ns korma.connection
-  (:import com.mchange.v2.c3p0.ComboPooledDataSource)
   (:require [clojure.java.jdbc :as jdbc]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
@@ -37,18 +36,20 @@
   "Returns the cached connection pool for `database`."
   [database]
   (if-let [database (connection-spec database)]
-    (let [params (merge *c3p0-settings* (:params database))]
-      {:datasource
-       (doto (ComboPooledDataSource.)
-         (.setDriverClass (:classname database))
-         (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
-         (.setUser (:user database))
-         (.setPassword (:password database))
-         (.setInitialPoolSize (:initial-pool-size params))
-         (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
-         (.setMaxIdleTime (parse-integer (:max-idle-time params)))
-         (.setMaxPoolSize (parse-integer (:max-pool-size params)))
-         (.setMinPoolSize (parse-integer (:min-pool-size params))))})
+    (if-let [clazz (Class/forName "com.mchange.v2.c3p0.ComboPooledDataSource")]
+      (let [params (merge *c3p0-settings* (:params database))]
+        {:datasource
+         (doto (clojure.lang.Reflector/invokeConstructor clazz (into-array []))
+           (.setDriverClass (:classname database))
+           (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
+           (.setUser (:user database))
+           (.setPassword (:password database))
+           (.setInitialPoolSize (:initial-pool-size params))
+           (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
+           (.setMaxIdleTime (parse-integer (:max-idle-time params)))
+           (.setMaxPoolSize (parse-integer (:max-pool-size params)))
+           (.setMinPoolSize (parse-integer (:min-pool-size params))))})
+      (throw (Exception. "Can't find the C3P0 library on class path.")))
     (illegal-argument-exception "Can't find connection pool: %s" database)))
 
 (defmacro with-c3p0-pool
