@@ -7,7 +7,8 @@
 (def ^:dynamic *bone-cp-settings* {})
 
 (def ^:dynamic *c3p0-settings*
-  {:initial-pool-size 3
+  {:acquire-retry-attempts 1 ; TODO: Set back to 30
+   :initial-pool-size 3
    :max-idle-time (* 3 60 60)
    :max-idle-time-excess-connections (* 30 60)
    :max-pool-size 15
@@ -56,12 +57,15 @@
   [database]
   (if-let [database (connection-spec database)]
     (let [params (merge *c3p0-settings* (:params database))]
+      (if (:classname database)
+        (Class/forName (:classname database)))
       {:datasource
        (doto (invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")
          (.setDriverClass (:classname database))
          (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
          (.setUser (:user database))
          (.setPassword (:password database))
+         (.setAcquireRetryAttempts (parse-integer (:acquire-retry-attempts params)))
          (.setInitialPoolSize (:initial-pool-size params))
          (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
          (.setMaxIdleTime (parse-integer (:max-idle-time params)))
