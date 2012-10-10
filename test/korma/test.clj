@@ -6,7 +6,7 @@
   {:url (env :sqlite) :vendor :sqlite})
 
 (def ^:dynamic *vendors*
-  [:mysql :postgresql :sqlite])
+  [:mysql :postgresql])
 
 (defmacro database-test [test-name & body]
   `(do ~@(for [vendor# *vendors*

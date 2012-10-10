@@ -8,11 +8,11 @@
         korma.test
         clojure.test))
 
-(deftest test-connection-url
+(database-test test-connection-url
   (is (thrown? IllegalArgumentException (connection-url :unknown-db)))
   (is (re-matches #".*korma.*" (connection-url (:vendor *database*)))))
 
-(deftest test-make-connection-pool
+(database-test test-make-connection-pool
   (let [pool (make-connection-pool (:vendor *database*))]
     (is (map? pool))
     (let [datasource (:datasource pool)]
@@ -23,35 +23,35 @@
       (is (= 1800 (.getMaxIdleTimeExcessConnections datasource)))
       (.close datasource))))
 
-(deftest test-resolve-connection
+(database-test test-resolve-connection
   (is (= (connection-url (:vendor *database*))
          (resolve-connection (:vendor *database*))))
   (is (= (connection-url (:vendor *database*))
          (resolve-connection (connection-url (:vendor *database*))))))
 
-(deftest test-resolve-connection-pool
+(database-test test-resolve-connection-pool
   (let [pool (resolve-connection-pool (:vendor *database*))]
     (is (map? pool))
     (is (re-matches #".*korma.*" (.getJdbcUrl (:datasource pool))))
     (is (= (:datasource pool) (:datasource (resolve-connection-pool (:vendor *database*)))))))
 
-(deftest test-with-connection
+(database-test test-with-connection
   (with-connection (:vendor *database*)
     (is (instance? Connection (jdbc/connection))))
   (is (thrown? IllegalArgumentException (with-connection :unknown))))
 
-(deftest test-with-connection-pool
+(database-test test-with-connection-pool
   (with-connection-pool (:vendor *database*)
     (is (instance? NewProxyConnection (jdbc/connection)))))
 
-(deftest test-wrap-connection
+(database-test test-wrap-connection
   ((wrap-connection
     (fn [request]
       (is (instance? Connection (jdbc/connection))))
     (:vendor *database*))
    {}))
 
-(deftest test-wrap-connection-pool
+(database-test test-wrap-connection-pool
   ((wrap-connection-pool
     (fn [request]
       (is (instance? NewProxyConnection (jdbc/connection))))
