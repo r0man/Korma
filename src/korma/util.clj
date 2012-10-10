@@ -1,6 +1,9 @@
 (ns korma.util
   (:use [clojure.string :only [blank? split]]))
 
+(defn illegal-argument-exception [format-message & format-args]
+  (throw (IllegalArgumentException. (apply format format-message format-args))))
+
 (defmacro defn-memo
   "Just like defn, but memoizes the function using clojure.core/memoize"
   [fn-name & defn-stuff]

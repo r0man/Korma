@@ -3,7 +3,7 @@
   (:require [clojure.java.jdbc :as jdbc]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
-            [korma.util :refer [defn-memo parse-db-url parse-integer]]))
+            [korma.util :refer [defn-memo illegal-argument-exception parse-db-url parse-integer]]))
 
 (def ^:dynamic *c3p0-settings*
   {:initial-pool-size 3
@@ -19,7 +19,7 @@
   "Lookup the database connection url for `database`."
   [database]
   (or (env database)
-      (throw (IllegalArgumentException. (format "Can't find connection url: %s" database)))))
+      (illegal-argument-exception "Can't find connection url: %s" database)))
 
 (defn connection-spec
   "Returns the connection spec for `database`."
@@ -31,7 +31,7 @@
    database
    (string? database)
    (parse-db-url database)
-   :else (throw (IllegalArgumentException. (format "Can't find connection spec: %s" database)))))
+   :else (illegal-argument-exception "Can't find connection spec: %s" database)))
 
 (defn-memo connection-pool
   "Make a C3P0 connection pool for `database`."
@@ -49,7 +49,7 @@
          (.setMaxIdleTime (parse-integer (:max-idle-time params)))
          (.setMaxPoolSize (parse-integer (:max-pool-size params)))
          (.setMinPoolSize (parse-integer (:min-pool-size params))))})
-    (throw (IllegalArgumentException. (format "Can't find connection pool: %s" database)))))
+    (throw (illegal-argument-exception "Can't find connection pool: %s" database))))
 
 (defmacro with-connection
   "Evaluates body in the context of a connection to the database
