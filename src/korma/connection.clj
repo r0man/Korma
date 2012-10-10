@@ -16,7 +16,7 @@
   {:entity underscore :keyword dasherize})
 
 (defn connection-url
-  "Lookup the database connection url for `database`."
+  "Returns the connection url for `database`."
   [database]
   (or (env database)
       (illegal-argument-exception "Can't find connection url: %s" database)))
@@ -34,7 +34,7 @@
    :else (illegal-argument-exception "Can't find connection spec: %s" database)))
 
 (defn-memo connection-pool
-  "Make a C3P0 connection pool for `database`."
+  "Returns the cached connection pool for `database`."
   [database]
   (if-let [database (connection-spec database)]
     (let [params (merge *c3p0-settings* (:params database))]
@@ -52,31 +52,28 @@
     (illegal-argument-exception "Can't find connection pool: %s" database)))
 
 (defmacro with-connection
-  "Evaluates body in the context of a connection to the database
-  `name`. The connection spec for `name` is looked up via environ."
+  "Evaluates `body` with a connection to `database`."
   [database & body]
   `(jdbc/with-naming-strategy *naming-strategy*
      (jdbc/with-connection (connection-spec ~database)
        ~@body)))
 
 (defmacro with-connection-pool
-  "Evaluates body in the context of a connection to the database
-  `name`. The connection spec for `name` is looked up via environ."
+  "Evaluates `body` with a pooled connection to `database`."
   [database & body]
   `(jdbc/with-naming-strategy *naming-strategy*
      (jdbc/with-connection (connection-pool ~database)
        ~@body)))
 
 (defn wrap-connection
-  "Returns a Ring handler with an open connection to the `database`."
+  "Wraps a connection to `database` around the Ring `handler`"
   [handler database]
   (fn [request]
     (with-connection database
       (handler request))))
 
 (defn wrap-connection-pool
-  "Returns a Ring handler with an open connection from a C3P0 pool to
-  the `database`."
+  "Wraps a pooled connection to `database` around the Ring `handler`"
   [handler database]
   (fn [request]
     (with-connection-pool database
