@@ -19,7 +19,7 @@
   "Lookup the database connection url for `database`."
   [database]
   (if-let [url (env database)]
-    url (throw (IllegalArgumentException. (format "Can't find connection url via environ: %s" database)))))
+    url (throw (IllegalArgumentException. (format "Can't find connection url: %s" database)))))
 
 (defn connection-spec
   "Returns the connection spec for `database`."
@@ -31,7 +31,7 @@
    database
    (string? database)
    (parse-db-url database)
-   :else (throw (IllegalArgumentException. (format "Can't find connection: %s" database)))))
+   :else (throw (IllegalArgumentException. (format "Can't find connection spec: %s" database)))))
 
 (defn-memo connection-pool
   "Make a C3P0 connection pool for `database`."
