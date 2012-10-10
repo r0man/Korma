@@ -34,7 +34,7 @@
    :else (throw (IllegalArgumentException. (format "Can't find connection: %s" database)))))
 
 (defn-memo connection-pool
-  "Make a C3P0 connection pool."
+  "Make a C3P0 connection pool for `database`."
   [database]
   (if-let [database (connection-spec database)]
     (let [params (merge *c3p0-settings* (:params database))]
@@ -68,8 +68,7 @@
        ~@body)))
 
 (defn wrap-connection
-  "Returns a Ring handler with an open connection to the `database`
-  database."
+  "Returns a Ring handler with an open connection to the `database`."
   [handler database]
   (fn [request]
     (with-connection database
@@ -77,7 +76,7 @@
 
 (defn wrap-connection-pool
   "Returns a Ring handler with an open connection from a C3P0 pool to
-  the `database` database."
+  the `database`."
   [handler database]
   (fn [request]
     (with-connection-pool database
