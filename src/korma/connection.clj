@@ -21,38 +21,35 @@
   (if-let [url (env database)]
     url (throw (IllegalArgumentException. (format "Can't find connection url via environ: %s" database)))))
 
-(defn-memo connection-pool
-  "Make a C3P0 connection pool."
-  [database]
-  (cond
-   (keyword? database)
-   (connection-pool (connection-url database))
-   (string? database)
-   (connection-pool (parse-db-url database))
-   (map? database)
-   (let [params (merge *c3p0-settings* (:params database))]
-     {:datasource
-      (doto (ComboPooledDataSource.)
-        (.setDriverClass (:classname database))
-        (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
-        (.setUser (:user database))
-        (.setPassword (:password database))
-        (.setInitialPoolSize (:initial-pool-size params))
-        (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
-        (.setMaxIdleTime (parse-integer (:max-idle-time params)))
-        (.setMaxPoolSize (parse-integer (:max-pool-size params)))
-        (.setMinPoolSize (parse-integer (:min-pool-size params))))})
-   :else (throw (IllegalArgumentException. (format "Can't find connection pool: %s" database)))))
-
 (defn connection-spec
   "Returns the connection spec for `database`."
   [database]
   (cond
    (keyword? database)
    (connection-spec (connection-url database))
+   (map? database)
+   database
    (string? database)
    (parse-db-url database)
    :else (throw (IllegalArgumentException. (format "Can't find connection: %s" database)))))
+
+(defn-memo connection-pool
+  "Make a C3P0 connection pool."
+  [database]
+  (if-let [database (connection-spec database)]
+    (let [params (merge *c3p0-settings* (:params database))]
+      {:datasource
+       (doto (ComboPooledDataSource.)
+         (.setDriverClass (:classname database))
+         (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
+         (.setUser (:user database))
+         (.setPassword (:password database))
+         (.setInitialPoolSize (:initial-pool-size params))
+         (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
+         (.setMaxIdleTime (parse-integer (:max-idle-time params)))
+         (.setMaxPoolSize (parse-integer (:max-pool-size params)))
+         (.setMinPoolSize (parse-integer (:min-pool-size params))))})
+    (throw (IllegalArgumentException. (format "Can't find connection pool: %s" database)))))
 
 (defmacro with-connection
   "Evaluates body in the context of a connection to the database

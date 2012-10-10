@@ -15,7 +15,8 @@
 (database-test test-connection-spec
   (is (thrown? IllegalArgumentException (connection-spec :unknown-db)))
   (is (map? (connection-spec (:vendor *database*))))
-  (is (map? (connection-spec (:url *database*)))))
+  (is (map? (connection-spec (:url *database*))))
+  (is (map? (connection-spec (parse-db-url (:url *database*))))))
 
 (database-test test-connection-pool
   (let [pool (connection-pool (:vendor *database*))]
