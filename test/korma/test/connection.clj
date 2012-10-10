@@ -10,30 +10,22 @@
 
 (database-test test-connection-url
   (is (thrown? IllegalArgumentException (connection-url :unknown-db)))
-  (is (re-matches #".*korma.*" (connection-url (:vendor *database*)))))
+  (is (re-matches (re-pattern (str (name (:vendor *database*)) "://.*korma.*")) (connection-url (:vendor *database*)))))
 
-(database-test test-make-connection-pool
-  (let [pool (make-connection-pool (:vendor *database*))]
+(database-test test-connection-spec
+  (is (thrown? IllegalArgumentException (connection-spec :unknown-db)))
+  (is (map? (connection-spec (:vendor *database*))))
+  (is (map? (connection-spec (:url *database*)))))
+
+(database-test test-connection-pool
+  (let [pool (connection-pool (:vendor *database*))]
     (is (map? pool))
     (let [datasource (:datasource pool)]
       (is (instance? ComboPooledDataSource datasource))
       (is (re-matches #".*korma.*" (.getJdbcUrl datasource)))
       (is (= 15 (.getMaxPoolSize datasource)))
       (is (= 10800 (.getMaxIdleTime datasource)))
-      (is (= 1800 (.getMaxIdleTimeExcessConnections datasource)))
-      (.close datasource))))
-
-(database-test test-resolve-connection
-  (is (= (connection-url (:vendor *database*))
-         (resolve-connection (:vendor *database*))))
-  (is (= (connection-url (:vendor *database*))
-         (resolve-connection (connection-url (:vendor *database*))))))
-
-(database-test test-resolve-connection-pool
-  (let [pool (resolve-connection-pool (:vendor *database*))]
-    (is (map? pool))
-    (is (re-matches #".*korma.*" (.getJdbcUrl (:datasource pool))))
-    (is (= (:datasource pool) (:datasource (resolve-connection-pool (:vendor *database*)))))))
+      (is (= 1800 (.getMaxIdleTimeExcessConnections datasource))))))
 
 (database-test test-with-connection
   (with-connection (:vendor *database*)

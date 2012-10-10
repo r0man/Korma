@@ -14,79 +14,70 @@
   {:entity underscore :keyword dasherize})
 
 (defn connection-url
-  "Lookup the database connection url for `db-name`."
-  [db-name]
-  (if-let [url (env db-name)]
-    url (throw (IllegalArgumentException. (format "Can't find database url via environ: %s" db-name)))))
+  "Lookup the database connection url for `database`."
+  [database]
+  (if-let [url (env database)]
+    url (throw (IllegalArgumentException. (format "Can't find connection url via environ: %s" database)))))
 
-(defn connection-spec
-  "Lookup the database connection url for `db-name` and return the parsed db-spec."
-  [db-name] (parse-db-url (connection-url db-name)))
-
-(defn make-connection-pool
+(defn-memo connection-pool
   "Make a C3P0 connection pool."
-  [db-spec]
+  [database]
   (cond
-   (keyword? db-spec)
-   (make-connection-pool (connection-url db-spec))
-   (string? db-spec)
-   (make-connection-pool (parse-db-url db-spec))
-   (map? db-spec)
-   (let [params (merge *c3p0-settings* (:params db-spec))]
+   (keyword? database)
+   (connection-pool (connection-url database))
+   (string? database)
+   (connection-pool (parse-db-url database))
+   (map? database)
+   (let [params (merge *c3p0-settings* (:params database))]
      {:datasource
       (doto (ComboPooledDataSource.)
-        (.setDriverClass (:classname db-spec))
-        (.setJdbcUrl (str "jdbc:" (:subprotocol db-spec) ":" (:subname db-spec)))
-        (.setUser (:user db-spec))
-        (.setPassword (:password db-spec))
+        (.setDriverClass (:classname database))
+        (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
+        (.setUser (:user database))
+        (.setPassword (:password database))
         (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
         (.setMaxIdleTime (parse-integer (:max-idle-time params)))
-        (.setMaxPoolSize (parse-integer (:max-pool-size params))))})))
+        (.setMaxPoolSize (parse-integer (:max-pool-size params))))})
+   :else (throw (IllegalArgumentException. (format "Can't find connection pool: %s" database)))))
 
-(defn resolve-connection
-  "Resolve the `db-spec` and return a connection map."
-  [db-spec]
+(defn connection-spec
+  "Returns the connection spec for `database`."
+  [database]
   (cond
-   (nil? db-spec)
-   (throw (IllegalArgumentException. (format "Can't resolve database connection: %s" db-spec)))
-   (keyword? db-spec)
-   (connection-url db-spec)
-   (string? db-spec)
-   db-spec
-   :else db-spec))
-
-(defn-memo resolve-connection-pool
-  "Resolve the database connection pool for `db-spec`."
-  [db-spec] (make-connection-pool db-spec))
+   (keyword? database)
+   (connection-spec (connection-url database))
+   (string? database)
+   (parse-db-url database)
+   :else (throw (IllegalArgumentException. (format "Can't find connection: %s" database)))))
 
 (defmacro with-connection
   "Evaluates body in the context of a connection to the database
   `name`. The connection spec for `name` is looked up via environ."
-  [db-spec & body]
+  [database & body]
   `(jdbc/with-naming-strategy *naming-strategy*
-     (jdbc/with-connection (resolve-connection ~db-spec)
+     (jdbc/with-connection (connection-spec ~database)
        ~@body)))
 
 (defmacro with-connection-pool
   "Evaluates body in the context of a connection to the database
   `name`. The connection spec for `name` is looked up via environ."
-  [db-spec & body]
+  [database & body]
   `(jdbc/with-naming-strategy *naming-strategy*
-     (jdbc/with-connection (resolve-connection-pool ~db-spec)
+     (jdbc/with-connection (connection-pool ~database)
        ~@body)))
 
 (defn wrap-connection
-  "Returns a Ring handler with an open connection to the `db-spec`
+  "Returns a Ring handler with an open connection to the `database`
   database."
-  [handler db-spec]
+  [handler database]
   (fn [request]
-    (with-connection db-spec
+    (with-connection database
       (handler request))))
 
 (defn wrap-connection-pool
   "Returns a Ring handler with an open connection from a C3P0 pool to
-  the `db-spec` database."
-  [handler db-spec]
+  the `database` database."
+  [handler database]
   (fn [request]
-    (with-connection-pool db-spec
+    (with-connection-pool database
       (handler request))))
