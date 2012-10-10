@@ -1,5 +1,6 @@
 (ns korma.test.connection
-  (:import com.mchange.v2.c3p0.ComboPooledDataSource
+  (:import [com.jolbox.bonecp BoneCPDataSource ConnectionHandle]
+           com.mchange.v2.c3p0.ComboPooledDataSource
            com.mchange.v2.c3p0.impl.NewProxyConnection
            java.sql.Connection)
   (:require [clojure.java.jdbc :as jdbc])
@@ -18,6 +19,13 @@
   (is (map? (connection-spec (:url *database*))))
   (is (map? (connection-spec (parse-db-url (:url *database*))))))
 
+(database-test test-bone-cp-pool
+  (let [pool (bone-cp-pool (:vendor *database*))]
+    (is (map? pool))
+    (let [datasource (:datasource pool)]
+      (is (instance? BoneCPDataSource datasource))
+      (is (re-matches (re-pattern (str "jdbc:" (name (:vendor *database*)) "://.*korma.*")) (.getJdbcUrl (.getConfig datasource)))))))
+
 (database-test test-c3p0-pool
   (let [pool (c3p0-pool (:vendor *database*))]
     (is (map? pool))
@@ -30,6 +38,10 @@
       (is (= 10800 (.getMaxIdleTime datasource)))
       (is (= 1800 (.getMaxIdleTimeExcessConnections datasource))))))
 
+(database-test test-with-bone-cp-pool
+  (with-bone-cp-pool (:vendor *database*)
+    (is (instance? ConnectionHandle (jdbc/connection)))))
+
 (database-test test-with-c3p0-pool
   (with-c3p0-pool (:vendor *database*)
     (is (instance? NewProxyConnection (jdbc/connection)))))
@@ -39,16 +51,20 @@
     (is (instance? Connection (jdbc/connection))))
   (is (thrown? IllegalArgumentException (with-connection :unknown))))
 
+(database-test test-wrap-bone-cp-pool
+  ((wrap-bone-cp-pool
+    (fn [request]
+      (is (instance? ConnectionHandle (jdbc/connection))))
+    (:vendor *database*)) {}))
+
 (database-test test-wrap-c3p0-pool
   ((wrap-c3p0-pool
     (fn [request]
       (is (instance? NewProxyConnection (jdbc/connection))))
-    (:vendor *database*))
-   {}))
+    (:vendor *database*)) {}))
 
 (database-test test-wrap-connection
   ((wrap-connection
     (fn [request]
       (is (instance? Connection (jdbc/connection))))
-    (:vendor *database*))
-   {}))
+    (:vendor *database*)) {}))

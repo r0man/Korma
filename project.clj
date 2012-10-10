@@ -9,9 +9,12 @@
                          :postgresql "postgresql://korma:korma@localhost/korma"
                          :sqlite "sqlite://tmp/korma.sqlite"}
                    :dependencies [[c3p0/c3p0 "0.9.1.2"]
+                                  [com.jolbox/bonecp "0.7.1.RELEASE"]
                                   [mysql/mysql-connector-java "5.1.21"]
                                   [postgresql "9.1-901.jdbc4"]
-                                  [org.xerial/sqlite-jdbc "3.7.2"]]}}
+                                  [org.slf4j/slf4j-log4j12 "1.5.10"]
+                                  [org.xerial/sqlite-jdbc "3.7.2"]]
+                   :resource-paths ["test-resources"]}}
   :codox {:exclude [korma.sql.engine korma.sql.fns korma.sql.utils]}
   :plugins [[environ/environ.lein "0.3.0"]]
   :hooks [environ.leiningen.hooks]

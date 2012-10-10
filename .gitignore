@@ -6,3 +6,4 @@ pom.xml
 .lein-deps-sum
 /target
 /.lein-env
+/logs/debug.log

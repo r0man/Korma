@@ -4,6 +4,8 @@
             [inflections.core :refer [dasherize underscore]]
             [korma.util :refer [defn-memo illegal-argument-exception parse-db-url parse-integer]]))
 
+(def ^:dynamic *bone-cp-settings* {})
+
 (def ^:dynamic *c3p0-settings*
   {:initial-pool-size 3
    :max-idle-time (* 3 60 60)
@@ -32,28 +34,50 @@
    (parse-db-url database)
    :else (illegal-argument-exception "Can't find connection spec: %s" database)))
 
-(defn-memo c3p0-pool
-  "Returns the cached connection pool for `database`."
+(defn- invoke-constructor [clazz & args]
+  (clojure.lang.Reflector/invokeConstructor
+   (Class/forName (str clazz)) (into-array args)))
+
+(defn-memo bone-cp-pool
+  "Returns the cached BoneCP connection pool for `database`."
   [database]
   (if-let [database (connection-spec database)]
-    (if-let [clazz (Class/forName "com.mchange.v2.c3p0.ComboPooledDataSource")]
-      (let [params (merge *c3p0-settings* (:params database))]
-        {:datasource
-         (doto (clojure.lang.Reflector/invokeConstructor clazz (into-array []))
-           (.setDriverClass (:classname database))
-           (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
-           (.setUser (:user database))
-           (.setPassword (:password database))
-           (.setInitialPoolSize (:initial-pool-size params))
-           (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
-           (.setMaxIdleTime (parse-integer (:max-idle-time params)))
-           (.setMaxPoolSize (parse-integer (:max-pool-size params)))
-           (.setMinPoolSize (parse-integer (:min-pool-size params))))})
-      (throw (Exception. "Can't find the C3P0 library on class path.")))
+    (let [params (merge *bone-cp-settings* (:params database))]
+      {:datasource
+       (->> (doto (invoke-constructor "com.jolbox.bonecp.BoneCPConfig")
+              (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
+              (.setUsername (:user database))
+              (.setPassword (:password database)))
+            (invoke-constructor "com.jolbox.bonecp.BoneCPDataSource"))})
     (illegal-argument-exception "Can't find connection pool: %s" database)))
 
+(defn-memo c3p0-pool
+  "Returns the cached C3P0 connection pool for `database`."
+  [database]
+  (if-let [database (connection-spec database)]
+    (let [params (merge *c3p0-settings* (:params database))]
+      {:datasource
+       (doto (invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")
+         (.setDriverClass (:classname database))
+         (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
+         (.setUser (:user database))
+         (.setPassword (:password database))
+         (.setInitialPoolSize (:initial-pool-size params))
+         (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
+         (.setMaxIdleTime (parse-integer (:max-idle-time params)))
+         (.setMaxPoolSize (parse-integer (:max-pool-size params)))
+         (.setMinPoolSize (parse-integer (:min-pool-size params))))})
+    (illegal-argument-exception "Can't find connection pool: %s" database)))
+
+(defmacro with-bone-cp-pool
+  "Evaluates `body` with a pooled BoneCP connection to `database`."
+  [database & body]
+  `(jdbc/with-naming-strategy *naming-strategy*
+     (jdbc/with-connection (bone-cp-pool ~database)
+       ~@body)))
+
 (defmacro with-c3p0-pool
-  "Evaluates `body` with a pooled connection to `database`."
+  "Evaluates `body` with a pooled C3P0 connection to `database`."
   [database & body]
   `(jdbc/with-naming-strategy *naming-strategy*
      (jdbc/with-connection (c3p0-pool ~database)
@@ -66,8 +90,15 @@
      (jdbc/with-connection (connection-spec ~database)
        ~@body)))
 
+(defn wrap-bone-cp-pool
+  "Wraps a pooled BoneCP connection to `database` around the Ring `handler`"
+  [handler database]
+  (fn [request]
+    (with-bone-cp-pool database
+      (handler request))))
+
 (defn wrap-c3p0-pool
-  "Wraps a pooled connection to `database` around the Ring `handler`"
+  "Wraps a pooled C3P0 connection to `database` around the Ring `handler`"
   [handler database]
   (fn [request]
     (with-c3p0-pool database
