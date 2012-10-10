@@ -1,6 +1,7 @@
 (ns korma.test
   (:use [environ.core :only [env]]
-        clojure.test))
+        clojure.test
+        korma.connection))
 
 (def ^:dynamic *database*
   {:url (env :sqlite) :vendor :sqlite})
@@ -13,9 +14,5 @@
                :let [test-sym# (symbol (str test-name "-" (name vendor#)))]]
            `(do (deftest ~test-sym#
                   (binding [*database* {:url (env ~vendor#) :vendor ~vendor#}]
-                    (try
-                      ~@body
-                      (finally
-                       ;; TODO: Really needed? Then don't hardcode!
-                       (.delete (java.io.File. "/tmp/korma"))))))
+                    ~@body))
                 (alter-meta! (var ~test-sym#) assoc ~vendor# true)))))
