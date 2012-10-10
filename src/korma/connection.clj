@@ -33,7 +33,7 @@
    (parse-db-url database)
    :else (illegal-argument-exception "Can't find connection spec: %s" database)))
 
-(defn-memo connection-pool
+(defn-memo c3p0-pool
   "Returns the cached connection pool for `database`."
   [database]
   (if-let [database (connection-spec database)]
@@ -51,6 +51,13 @@
          (.setMinPoolSize (parse-integer (:min-pool-size params))))})
     (illegal-argument-exception "Can't find connection pool: %s" database)))
 
+(defmacro with-c3p0-pool
+  "Evaluates `body` with a pooled connection to `database`."
+  [database & body]
+  `(jdbc/with-naming-strategy *naming-strategy*
+     (jdbc/with-connection (c3p0-pool ~database)
+       ~@body)))
+
 (defmacro with-connection
   "Evaluates `body` with a connection to `database`."
   [database & body]
@@ -58,23 +65,16 @@
      (jdbc/with-connection (connection-spec ~database)
        ~@body)))
 
-(defmacro with-connection-pool
-  "Evaluates `body` with a pooled connection to `database`."
-  [database & body]
-  `(jdbc/with-naming-strategy *naming-strategy*
-     (jdbc/with-connection (connection-pool ~database)
-       ~@body)))
+(defn wrap-c3p0-pool
+  "Wraps a pooled connection to `database` around the Ring `handler`"
+  [handler database]
+  (fn [request]
+    (with-c3p0-pool database
+      (handler request))))
 
 (defn wrap-connection
   "Wraps a connection to `database` around the Ring `handler`"
   [handler database]
   (fn [request]
     (with-connection database
-      (handler request))))
-
-(defn wrap-connection-pool
-  "Wraps a pooled connection to `database` around the Ring `handler`"
-  [handler database]
-  (fn [request]
-    (with-connection-pool database
       (handler request))))
