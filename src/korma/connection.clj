@@ -6,9 +6,11 @@
             [korma.util :refer [defn-memo parse-db-url parse-integer]]))
 
 (def ^:dynamic *c3p0-settings*
-  {:max-idle-time (* 3 60 60)
+  {:initial-pool-size 3
+   :max-idle-time (* 3 60 60)
    :max-idle-time-excess-connections (* 30 60)
-   :max-pool-size 15})
+   :max-pool-size 15
+   :min-pool-size 3})
 
 (def ^:dynamic *naming-strategy*
   {:entity underscore :keyword dasherize})
@@ -35,9 +37,11 @@
         (.setJdbcUrl (str "jdbc:" (:subprotocol database) ":" (:subname database)))
         (.setUser (:user database))
         (.setPassword (:password database))
+        (.setInitialPoolSize (:initial-pool-size params))
         (.setMaxIdleTimeExcessConnections (parse-integer (:max-idle-time-excess-connections params)))
         (.setMaxIdleTime (parse-integer (:max-idle-time params)))
-        (.setMaxPoolSize (parse-integer (:max-pool-size params))))})
+        (.setMaxPoolSize (parse-integer (:max-pool-size params)))
+        (.setMinPoolSize (parse-integer (:min-pool-size params))))})
    :else (throw (IllegalArgumentException. (format "Can't find connection pool: %s" database)))))
 
 (defn connection-spec
