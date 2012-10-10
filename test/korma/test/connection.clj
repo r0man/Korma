@@ -22,7 +22,7 @@
     (is (map? pool))
     (let [datasource (:datasource pool)]
       (is (instance? ComboPooledDataSource datasource))
-      (is (re-matches #".*korma.*" (.getJdbcUrl datasource)))
+      (is (re-matches (re-pattern (str "jdbc:" (name (:vendor *database*)) "://.*korma.*")) (.getJdbcUrl datasource)))
       (is (= 15 (.getMaxPoolSize datasource)))
       (is (= 10800 (.getMaxIdleTime datasource)))
       (is (= 1800 (.getMaxIdleTimeExcessConnections datasource))))))
