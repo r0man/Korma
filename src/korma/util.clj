@@ -59,8 +59,8 @@
        :server-port server-port
        :spec {:subname (str "//" server-name (if server-port (str ":" server-port)) "/" db (if-not (blank? query-string) (str "?" query-string)))
               :subprotocol (nth matches 3)
-              :user (nth matches 5)
+              :username (nth matches 5)
               :password (nth matches 6)}
        :uri (nth matches 12)
-       :user (nth matches 5)})
+       :username (nth matches 5)})
     (illegal-argument-exception "Can't parse database connection url %s:" s)))

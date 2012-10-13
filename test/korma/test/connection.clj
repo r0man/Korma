@@ -11,10 +11,11 @@
 
 (deftest test-connection-spec
   (let [spec (connection-spec "mysql://tiger:scotch@localhost/korma?profileSQL=true")]
+    (is (= "com.mysql.jdbc.Driver" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
-    (is (= "tiger" (:user spec)))
+    (is (= "tiger" (:username spec)))
     (is (= "scotch" (:password spec)))
     (is (= "korma" (:db spec)))
     (is (= "/korma" (:uri spec)))
@@ -23,10 +24,11 @@
       (is (= "mysql" (:subprotocol spec)))
       (is (= "//localhost/korma?profileSQL=true" (:subname spec)))))
   (let [spec (connection-spec "postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
+    (is (= "org.postgresql.Driver" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= "localhost" (:server-name spec)))
     (is (= 5432 (:server-port spec)))
-    (is (= "tiger" (:user spec)))
+    (is (= "tiger" (:username spec)))
     (is (= "scotch" (:password spec)))
     (is (= "korma" (:db spec)))
     (is (= "/korma" (:uri spec)))
@@ -35,22 +37,25 @@
       (is (= "postgresql" (:subprotocol spec)))
       (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))))
   (let [spec (connection-spec "sqlite://tmp/korma.sqlite")]
+    (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= {} (:params spec)))
     (let [spec (:spec spec)]
       (is (= "sqlite" (:subprotocol spec)))
       (is (= "//tmp/korma.sqlite" (:subname spec)))))
   (let [spec (connection-spec "sqlite:korma.sqlite")]
+    (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= {} (:params spec)))
     (let [spec (:spec spec)]
       (is (= "sqlite" (:subprotocol spec)))
       (is (= "korma.sqlite" (:subname spec)))))
   (let [spec (connection-spec "sqlserver://tiger:scotch@localhost/korma")]
+    (is (= "com.microsoft.sqlserver.jdbc.SQLServerDriver" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
-    (is (= "tiger" (:user spec)))
+    (is (= "tiger" (:username spec)))
     (is (= "scotch" (:password spec)))
     (is (= "korma" (:db spec)))
     (is (= "/korma" (:uri spec)))
@@ -59,10 +64,11 @@
       (is (= "sqlserver" (:subprotocol spec)))
       (is (= "//localhost;database=korma;user=tiger;password=scotch" (:subname spec)))))
   (let [spec (connection-spec "oracle://tiger:scotch@localhost/korma")]
+    (is (= "oracle.jdbc.driver.OracleDriver" (:classname spec)))
     (is (= :jdbc (:pool spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
-    (is (= "tiger" (:user spec)))
+    (is (= "tiger" (:username spec)))
     (is (= "scotch" (:password spec)))
     (is (= "korma" (:db spec)))
     (is (= "/korma" (:uri spec)))
@@ -71,9 +77,9 @@
       (is (= "oracle:thin" (:subprotocol spec)))
       (is (= ":tiger/scotch@localhost:korma" (:subname spec))))))
 
-;; (database-test test-connection-url
-;;   (is (thrown? IllegalArgumentException (connection-url :unknown-db)))
-;;   (is (re-matches (re-pattern (str ".*:" (name (:vendor *database*)) ":.*")) (connection-url (:vendor *database*)))))
+(database-test test-connection-url
+  (is (thrown? IllegalArgumentException (connection-url :unknown-db)))
+  (is (re-matches (re-pattern (str ".*:" (name (:vendor *database*)) ":.*")) (connection-url (:vendor *database*)))))
 
 (database-test test-connection
   (let [connection (connection (:vendor *database*))]

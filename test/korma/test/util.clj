@@ -49,7 +49,7 @@
       (is (= "postgresql" (:subprotocol spec)))))
   (let [url (parse-db-url "postgresql://tiger:scotch@localhost:5432/korma?a=1&b=2")]
     (is (= :jdbc (:pool url)))
-    (is (= "tiger" (:user url)))
+    (is (= "tiger" (:username url)))
     (is (= "scotch" (:password url)))
     (is (= "localhost" (:server-name url)))
     (is (= 5432 (:server-port url)))
