@@ -4,16 +4,6 @@
             [inflections.core :refer [dasherize underscore]]
             [korma.util :as util]))
 
-(def ^:dynamic *bone-cp-settings* {})
-
-(def ^:dynamic *c3p0-settings*
-  {:acquire-retry-attempts 1 ; TODO: Set back to 30
-   :initial-pool-size 3
-   :max-idle-time (* 3 60 60)
-   :max-idle-time-excess-connections (* 30 60)
-   :max-pool-size 15
-   :min-pool-size 3})
-
 (def ^:dynamic *naming-strategy*
   {:entity underscore :keyword dasherize})
 
@@ -73,16 +63,16 @@
     {:datasource (util/invoke-constructor "com.jolbox.bonecp.BoneCPDataSource" config)}))
 
 (defmethod connection-pool :c3p0 [db-spec]
-  (let [params (merge *c3p0-settings* (:params db-spec))
+  (let [params (:params db-spec)
         datasource (util/invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
-    (.setAcquireRetryAttempts datasource (util/parse-integer (:acquire-retry-attempts params)))
+    (.setAcquireRetryAttempts datasource (util/parse-integer (or (:acquire-retry-attempts params) 1))) ; TODO: Set back to 30
     (.setDriverClass datasource (:classname db-spec))
-    (.setInitialPoolSize datasource (:initial-pool-size params))
+    (.setInitialPoolSize datasource (util/parse-integer (or (:initial-pool-size params) 3)))
     (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
-    (.setMaxIdleTime datasource (util/parse-integer (:max-idle-time params)))
-    (.setMaxIdleTimeExcessConnections datasource (util/parse-integer (:max-idle-time-excess-connections params)))
-    (.setMaxPoolSize datasource (util/parse-integer (:max-pool-size params)))
-    (.setMinPoolSize datasource (util/parse-integer (:min-pool-size params)))
+    (.setMaxIdleTime datasource (util/parse-integer (or (:max-idle-time params) (* 3 60 60))))
+    (.setMaxIdleTimeExcessConnections datasource (util/parse-integer (or (:max-idle-time-excess-connections params) (* 30 60))))
+    (.setMaxPoolSize datasource (util/parse-integer (or (:max-pool-size params) 15)))
+    (.setMinPoolSize datasource (util/parse-integer (or (:min-pool-size params) 3)))
     (.setPassword datasource (:password db-spec))
     (.setUser datasource (:user db-spec))
     {:datasource datasource}))
