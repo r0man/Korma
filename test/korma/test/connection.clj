@@ -53,12 +53,12 @@
 
 (database-test test-connection
   (let [connection (connection (:vendor *database*))]
-    (is (instance? BoneCPDataSource (:datasource connection)))
+    (is (instance? ComboPooledDataSource (:datasource connection)))
     (is (not (= connection (connection (:vendor *database*)))))))
 
 (database-test test-cached-connection
   (let [connection (cached-connection (:vendor *database*))]
-    (is (instance? BoneCPDataSource (:datasource connection)))
+    (is (instance? ComboPooledDataSource (:datasource connection)))
     (is (= connection (cached-connection (:vendor *database*))))))
 
 (database-test test-with-connection
@@ -71,3 +71,9 @@
     (fn [request]
       (is (instance? Connection (jdbc/connection))))
     (:vendor *database*)) {}))
+
+;; (with-connection "c3p0:sqlite://tmp/korma.sqlite"
+;;   (jdbc/connection))
+
+;; (with-connection "bonecp:sqlite://tmp/korma.sqlite"
+;;   (jdbc/connection))

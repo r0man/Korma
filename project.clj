@@ -5,9 +5,9 @@
                  [inflections "0.7.3"]
                  [org.clojure/clojure "1.4.0"]
                  [org.clojure/java.jdbc "0.2.3"]]
-  :profiles {:dev {:env {:mysql "bonecp:mysql://korma:korma@localhost/korma"
-                         :postgresql "bonecp:postgresql://korma:korma@localhost/korma"
-                         :sqlite "bonecp:sqlite://tmp/korma.sqlite"}
+  :profiles {:dev {:env {:mysql "c3p0:mysql://korma:korma@localhost/korma"
+                         :postgresql "c3p0:postgresql://korma:korma@localhost/korma"
+                         :sqlite "c3p0:sqlite://tmp/korma.sqlite"}
                    :dependencies [[c3p0/c3p0 "0.9.1.2"]
                                   [com.jolbox/bonecp "0.7.1.RELEASE"]
                                   [mysql/mysql-connector-java "5.1.21"]
