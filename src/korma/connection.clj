@@ -18,25 +18,21 @@
   (fn [db-url] (keyword (util/parse-subprotocol db-url))))
 
 (defmethod connection-spec :mysql [db-url]
-  (assoc (util/parse-db-url db-url)
-    :classname "com.mysql.jdbc.Driver"))
+  (util/parse-db-url db-url))
 
 (defmethod connection-spec :oracle [db-url]
   (let [url (util/parse-db-url db-url)]
     (assoc url
-      :classname "oracle.jdbc.driver.OracleDriver"
       :subprotocol "oracle:thin"
       :subname (str ":" (:user url) "/" (:password url) "@" (util/format-server url)
                     ":" (:db url)))))
 
 (defmethod connection-spec :postgresql [db-url]
-  (assoc (util/parse-db-url db-url)
-    :classname "org.postgresql.Driver"))
+  (util/parse-db-url db-url))
 
 (defmethod connection-spec :sqlite [db-url]
   (if-let [matches (re-matches #"(([^:]+):)?([^:]+):([^?]+)(\?(.*))?" (str db-url))]
-    {:classname "org.sqlite.JDBC"
-     :pool (keyword (or (nth matches 2) :jdbc))
+    {:pool (keyword (or (nth matches 2) :jdbc))
      :subname (nth matches 4)
      :subprotocol (nth matches 3)
      :params (util/parse-params (nth matches 5))}))
@@ -44,7 +40,6 @@
 (defmethod connection-spec :sqlserver [db-url]
   (let [url (util/parse-db-url db-url)]
     (assoc url
-      :classname "com.microsoft.sqlserver.jdbc.SQLServerDriver"
       :subprotocol "sqlserver"
       :subname (str "//" (util/format-server url) ";"
                     "database=" (:db url) ";"
@@ -66,7 +61,6 @@
   (let [params (:params db-spec)
         datasource (util/invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
     (.setAcquireRetryAttempts datasource (util/parse-integer (or (:acquire-retry-attempts params) 1))) ; TODO: Set back to 30
-    (.setDriverClass datasource (:classname db-spec))
     (.setInitialPoolSize datasource (util/parse-integer (or (:initial-pool-size params) 3)))
     (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
     (.setMaxIdleTime datasource (util/parse-integer (or (:max-idle-time params) (* 3 60 60))))

@@ -12,7 +12,6 @@
 (deftest test-connection-spec
   (let [spec (connection-spec "mysql://tiger:scotch@localhost/korma?profileSQL=true")]
     (is (= :jdbc (:pool spec)))
-    (is (= "com.mysql.jdbc.Driver" (:classname spec)))
     (is (= "mysql" (:subprotocol spec)))
     (is (= "//localhost/korma?profileSQL=true" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
@@ -24,7 +23,6 @@
     (is (= {:profileSQL "true"} (:params spec))))
   (let [spec (connection-spec "postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
     (is (= :jdbc (:pool spec)))
-    (is (= "org.postgresql.Driver" (:classname spec)))
     (is (= "postgresql" (:subprotocol spec)))
     (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
@@ -36,19 +34,16 @@
     (is (= {:ssl "true"} (:params spec))))
   (let [spec (connection-spec "sqlite://tmp/korma.sqlite")]
     (is (= :jdbc (:pool spec)))
-    (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= "sqlite" (:subprotocol spec)))
     (is (= "//tmp/korma.sqlite" (:subname spec)))
     (is (= {} (:params spec))))
   (let [spec (connection-spec "sqlite:korma.sqlite")]
     (is (= :jdbc (:pool spec)))
-    (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= "sqlite" (:subprotocol spec)))
     (is (= "korma.sqlite" (:subname spec)))
     (is (= {} (:params spec))))
   (let [spec (connection-spec "sqlserver://tiger:scotch@localhost/korma")]
     (is (= :jdbc (:pool spec)))
-    (is (= "com.microsoft.sqlserver.jdbc.SQLServerDriver" (:classname spec)))
     (is (= "sqlserver" (:subprotocol spec)))
     (is (= "//localhost;database=korma;user=tiger;password=scotch" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
@@ -60,7 +55,6 @@
     (is (= {} (:params spec))))
   (let [spec (connection-spec "oracle://tiger:scotch@localhost/korma")]
     (is (= :jdbc (:pool spec)))
-    (is (= "oracle.jdbc.driver.OracleDriver" (:classname spec)))
     (is (= "oracle:thin" (:subprotocol spec)))
     (is (= ":tiger/scotch@localhost:korma" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
