@@ -9,59 +9,62 @@
         korma.test
         clojure.test))
 
+(deftest test-connection-spec
+  (let [spec (connection-spec "mysql://tiger:scotch@localhost/korma?profileSQL=true")]
+    (is (= :jdbc (:pool spec)))
+    (is (= "com.mysql.jdbc.Driver" (:classname spec)))
+    (is (= "mysql" (:subprotocol spec)))
+    (is (= "//localhost/korma?profileSQL=true" (:subname spec)))
+    (is (= "localhost" (:server-name spec)))
+    (is (nil? (:server-port spec)))
+    (is (= "tiger" (:user spec)))
+    (is (= "scotch" (:password spec)))
+    (is (= "korma" (:db spec)))
+    (is (= "/korma" (:uri spec)))
+    (is (= {:profileSQL "true"} (:params spec))))
+  (let [spec (connection-spec "bonecp:postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
+    (is (= :bonecp (:pool spec)))
+    (is (= "org.postgresql.Driver" (:classname spec)))
+    (is (= "postgresql" (:subprotocol spec)))
+    (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))
+    (is (= "localhost" (:server-name spec)))
+    (is (= 5432 (:server-port spec)))
+    (is (= "tiger" (:user spec)))
+    (is (= "scotch" (:password spec)))
+    (is (= "korma" (:db spec)))
+    (is (= "/korma" (:uri spec)))
+    (is (= {:ssl "true"} (:params spec))))
+  (let [spec (connection-spec "c3p0:sqlite://tmp/korma.sqlite")]
+    (is (= :c3p0 (:pool spec)))
+    (is (= "org.sqlite.JDBC" (:classname spec)))
+    (is (= "sqlite" (:subprotocol spec)))
+    (is (= "//tmp/korma.sqlite" (:subname spec)))
+    (is (= {} (:params spec))))
+  (let [spec (connection-spec "sqlite:korma.sqlite")]
+    (is (= :jdbc (:pool spec)))
+    (is (= "org.sqlite.JDBC" (:classname spec)))
+    (is (= "sqlite" (:subprotocol spec)))
+    (is (= "korma.sqlite" (:subname spec)))
+    (is (= {} (:params spec)))))
+
 (database-test test-connection-url
   (is (thrown? IllegalArgumentException (connection-url :unknown-db)))
-  (is (re-matches (re-pattern (str (name (:vendor *database*)) "://.*korma.*")) (connection-url (:vendor *database*)))))
+  (is (re-matches (re-pattern (str ".*:" (name (:vendor *database*)) ":.*")) (connection-url (:vendor *database*)))))
 
-(database-test test-connection-spec
-  (is (thrown? IllegalArgumentException (connection-spec :unknown-db)))
-  (is (map? (connection-spec (:vendor *database*))))
-  (is (map? (connection-spec (:url *database*))))
-  (is (map? (connection-spec (parse-db-url (:url *database*))))))
+(database-test test-connection
+  (let [connection (connection (:vendor *database*))]
+    (is (instance? BoneCPDataSource (:datasource connection)))
+    (is (not (= connection (connection (:vendor *database*)))))))
 
-(database-test test-bone-cp-pool
-  (let [pool (bone-cp-pool (:vendor *database*))]
-    (is (map? pool))
-    (let [datasource (:datasource pool)]
-      (is (instance? BoneCPDataSource datasource))
-      (is (re-matches (re-pattern (str "jdbc:" (name (:vendor *database*)) "://.*korma.*")) (.getJdbcUrl (.getConfig datasource)))))))
-
-(database-test test-c3p0-pool
-  (let [pool (c3p0-pool (:vendor *database*))]
-    (is (map? pool))
-    (let [datasource (:datasource pool)]
-      (is (instance? ComboPooledDataSource datasource))
-      (is (re-matches (re-pattern (str "jdbc:" (name (:vendor *database*)) "://.*korma.*")) (.getJdbcUrl datasource)))
-      (is (= 3 (.getInitialPoolSize datasource)))
-      (is (= 15 (.getMaxPoolSize datasource)))
-      (is (= 3 (.getMinPoolSize datasource)))
-      (is (= 10800 (.getMaxIdleTime datasource)))
-      (is (= 1800 (.getMaxIdleTimeExcessConnections datasource))))))
-
-(database-test test-with-bone-cp-pool
-  (with-bone-cp-pool (:vendor *database*)
-    (is (instance? ConnectionHandle (jdbc/connection)))))
-
-(database-test test-with-c3p0-pool
-  (with-c3p0-pool (:vendor *database*)
-    (is (instance? NewProxyConnection (jdbc/connection)))))
+(database-test test-cached-connection
+  (let [connection (cached-connection (:vendor *database*))]
+    (is (instance? BoneCPDataSource (:datasource connection)))
+    (is (= connection (cached-connection (:vendor *database*))))))
 
 (database-test test-with-connection
   (with-connection (:vendor *database*)
     (is (instance? Connection (jdbc/connection))))
   (is (thrown? IllegalArgumentException (with-connection :unknown))))
-
-(database-test test-wrap-bone-cp-pool
-  ((wrap-bone-cp-pool
-    (fn [request]
-      (is (instance? ConnectionHandle (jdbc/connection))))
-    (:vendor *database*)) {}))
-
-(database-test test-wrap-c3p0-pool
-  ((wrap-c3p0-pool
-    (fn [request]
-      (is (instance? NewProxyConnection (jdbc/connection))))
-    (:vendor *database*)) {}))
 
 (database-test test-wrap-connection
   ((wrap-connection
