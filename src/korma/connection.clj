@@ -87,9 +87,9 @@
    (keyword? db-name)
    (connection (connection-url db-name))
    (string? db-name)
-   (let [db-name (connection-spec db-name)]
-     (if (= :jdbc (:pool db-name))
-       db-name (connection-pool db-name)))
+   (let [db-spec (connection-spec db-name)]
+     (if (= :jdbc (:pool db-spec))
+       db-spec (connection-pool db-spec)))
    :else db-name))
 
 (util/defn-memo cached-connection [db-name]
