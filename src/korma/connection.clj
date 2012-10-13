@@ -43,6 +43,13 @@
      :subprotocol (nth matches 3)
      :params (util/parse-params (nth matches 5))}))
 
+(defmethod connection-spec :sqlserver [db-url]
+  (let [url (util/parse-db-url db-url)]
+    (assoc url
+      :classname "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+      :subprotocol "sqlserver"
+      :subname (str "//" (:server-name url) ":" (:server-port url) ";database=" (:db url) ";user=" (:user url) ";password=" (:password url)))))
+
 (defmulti connection-pool
   "Returns the connection pool for `db-spec`."
   (fn [db-spec] (:pool db-spec)))

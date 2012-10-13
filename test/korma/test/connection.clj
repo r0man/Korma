@@ -22,6 +22,18 @@
     (is (= "korma" (:db spec)))
     (is (= "/korma" (:uri spec)))
     (is (= {:profileSQL "true"} (:params spec))))
+  (let [spec (connection-spec "sqlserver://tiger:scotch@localhost/korma")]
+    (is (= :jdbc (:pool spec)))
+    (is (= "com.microsoft.sqlserver.jdbc.SQLServerDriver" (:classname spec)))
+    (is (= "sqlserver" (:subprotocol spec)))
+    (is (= "//localhost:;database=korma;user=tiger;password=scotch" (:subname spec)))
+    (is (= "localhost" (:server-name spec)))
+    (is (nil? (:server-port spec)))
+    (is (= "tiger" (:user spec)))
+    (is (= "scotch" (:password spec)))
+    (is (= "korma" (:db spec)))
+    (is (= "/korma" (:uri spec)))
+    (is (= {} (:params spec))))
   (let [spec (connection-spec "bonecp:postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
     (is (= :bonecp (:pool spec)))
     (is (= "org.postgresql.Driver" (:classname spec)))
