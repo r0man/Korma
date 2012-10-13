@@ -66,14 +66,16 @@
     (is (instance? Connection (jdbc/connection))))
   (is (thrown? IllegalArgumentException (with-connection :unknown))))
 
+(deftest test-with-connection-bonecp
+  (with-connection "bonecp:mysql://korma:korma@localhost/korma"
+    (is (instance? Connection (jdbc/connection))))
+  (with-connection "bonecp:postgresql://korma:korma@localhost/korma"
+    (is (instance? Connection (jdbc/connection))))
+  (with-connection "bonecp:sqlite://tmp/korma.sqlite"
+    (is (instance? Connection (jdbc/connection)))))
+
 (database-test test-wrap-connection
   ((wrap-connection
     (fn [request]
       (is (instance? Connection (jdbc/connection))))
     (:vendor *database*)) {}))
-
-;; (with-connection "c3p0:sqlite://tmp/korma.sqlite"
-;;   (jdbc/connection))
-
-;; (with-connection "bonecp:sqlite://tmp/korma.sqlite"
-;;   (jdbc/connection))
