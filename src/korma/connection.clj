@@ -72,26 +72,31 @@
     (.setUser datasource (:user db-spec))
     {:datasource datasource}))
 
-(defn connection [db-name]
-  "Returns the database connection for `db-name`."
-  (let [db-spec (connection-spec (connection-url db-name))]
-    (if (= :jdbc (:pool db-spec))
-      db-spec (connection-pool db-spec))))
+(defn connection [db-spec]
+  "Returns the db-spec connection for `db-spec`."
+  (cond
+   (keyword? db-spec)
+   (connection (connection-url db-spec))
+   (string? db-spec)
+   (let [db-spec (connection-spec db-spec)]
+     (if (= :jdbc (:pool db-spec))
+       db-spec (connection-pool db-spec)))
+   :else db-spec))
 
-(util/defn-memo cached-connection [db-name]
-  "Returns the cached database connection for `db-name`."
-  (connection db-name))
+(util/defn-memo cached-connection [db-spec]
+  "Returns the cached db-spec connection for `db-spec`."
+  (connection db-spec))
 
 (defmacro with-connection
-  "Evaluates `body` with a connection to `database`."
-  [database & body]
+  "Evaluates `body` with a connection to `db-spec`."
+  [db-spec & body]
   `(jdbc/with-naming-strategy *naming-strategy*
-     (jdbc/with-connection (cached-connection ~database)
+     (jdbc/with-connection (cached-connection ~db-spec)
        ~@body)))
 
 (defn wrap-connection
-  "Wraps a connection to `database` around the Ring `handler`"
-  [handler database]
+  "Wraps a connection to `db-spec` around the Ring `handler`"
+  [handler db-spec]
   (fn [request]
-    (with-connection database
+    (with-connection db-spec
       (handler request))))
