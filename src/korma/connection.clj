@@ -4,6 +4,8 @@
             [inflections.core :refer [dasherize underscore]]
             [korma.util :as util]))
 
+(def ^:dynamic *connection* nil)
+
 (def ^:dynamic *naming-strategy*
   {:entity underscore :keyword dasherize})
 
@@ -23,28 +25,28 @@
 (defmethod connection-spec :oracle [db-url]
   (let [url (util/parse-db-url db-url)]
     (assoc url
-      :subprotocol "oracle:thin"
-      :subname (str ":" (:user url) "/" (:password url) "@" (util/format-server url)
-                    ":" (:db url)))))
+      :spec {:subprotocol "oracle:thin"
+             :subname (str ":" (:user url) "/" (:password url) "@" (util/format-server url)
+                           ":" (:db url))})))
 
 (defmethod connection-spec :postgresql [db-url]
   (util/parse-db-url db-url))
 
 (defmethod connection-spec :sqlite [db-url]
   (if-let [matches (re-matches #"(([^:]+):)?([^:]+):([^?]+)(\?(.*))?" (str db-url))]
-    {:pool (keyword (or (nth matches 2) :jdbc))
-     :subname (nth matches 4)
-     :subprotocol (nth matches 3)
-     :params (util/parse-params (nth matches 5))}))
+    {:params (util/parse-params (nth matches 5))
+     :pool (keyword (or (nth matches 2) :jdbc))
+     :spec {:subname (nth matches 4)
+            :subprotocol (nth matches 3)}}))
 
 (defmethod connection-spec :sqlserver [db-url]
   (let [url (util/parse-db-url db-url)]
     (assoc url
-      :subprotocol "sqlserver"
-      :subname (str "//" (util/format-server url) ";"
-                    "database=" (:db url) ";"
-                    "user=" (:user url) ";"
-                    "password=" (:password url)))))
+      :spec {:subprotocol "sqlserver"
+             :subname (str "//" (util/format-server url) ";"
+                           "database=" (:db url) ";"
+                           "user=" (:user url) ";"
+                           "password=" (:password url))})))
 
 (defmulti connection-pool
   "Returns the connection pool for `db-spec`."
@@ -52,50 +54,51 @@
 
 (defmethod connection-pool :bonecp [db-spec]
   (let [config (util/invoke-constructor "com.jolbox.bonecp.BoneCPConfig")]
-    (.setJdbcUrl config (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
+    (.setJdbcUrl config (str "jdbc:" (name (:subprotocol (:spec db-spec))) ":" (:subname (:spec db-spec))))
     (.setUsername config (:user db-spec))
     (.setPassword config (:password db-spec))
-    {:datasource (util/invoke-constructor "com.jolbox.bonecp.BoneCPDataSource" config)}))
+    (assoc db-spec :spec {:datasource (util/invoke-constructor "com.jolbox.bonecp.BoneCPDataSource" config)})))
 
 (defmethod connection-pool :c3p0 [db-spec]
   (let [params (:params db-spec)
         datasource (util/invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
     (.setAcquireRetryAttempts datasource (util/parse-integer (or (:acquire-retry-attempts params) 1))) ; TODO: Set back to 30
     (.setInitialPoolSize datasource (util/parse-integer (or (:initial-pool-size params) 3)))
-    (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
+    (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol (:spec db-spec))) ":" (:subname (:spec db-spec))))
     (.setMaxIdleTime datasource (util/parse-integer (or (:max-idle-time params) (* 3 60 60))))
     (.setMaxIdleTimeExcessConnections datasource (util/parse-integer (or (:max-idle-time-excess-connections params) (* 30 60))))
     (.setMaxPoolSize datasource (util/parse-integer (or (:max-pool-size params) 15)))
     (.setMinPoolSize datasource (util/parse-integer (or (:min-pool-size params) 3)))
     (.setPassword datasource (:password db-spec))
     (.setUser datasource (:user db-spec))
-    {:datasource datasource}))
+    (assoc db-spec :spec {:datasource datasource})))
 
-(defn connection [db-spec]
-  "Returns the db-spec connection for `db-spec`."
+(defn connection [db-name]
+  "Returns the db-name connection for `db-name`."
   (cond
-   (keyword? db-spec)
-   (connection (connection-url db-spec))
-   (string? db-spec)
-   (let [db-spec (connection-spec db-spec)]
-     (if (= :jdbc (:pool db-spec))
-       db-spec (connection-pool db-spec)))
-   :else db-spec))
+   (keyword? db-name)
+   (connection (connection-url db-name))
+   (string? db-name)
+   (let [db-name (connection-spec db-name)]
+     (if (= :jdbc (:pool db-name))
+       db-name (connection-pool db-name)))
+   :else db-name))
 
-(util/defn-memo cached-connection [db-spec]
-  "Returns the cached db-spec connection for `db-spec`."
-  (connection db-spec))
+(util/defn-memo cached-connection [db-name]
+  "Returns the cached db-name connection for `db-name`."
+  (connection db-name))
 
 (defmacro with-connection
-  "Evaluates `body` with a connection to `db-spec`."
-  [db-spec & body]
-  `(jdbc/with-naming-strategy *naming-strategy*
-     (jdbc/with-connection (cached-connection ~db-spec)
-       ~@body)))
+  "Evaluates `body` with a connection to `db-name`."
+  [db-name & body]
+  `(binding [*connection* (cached-connection ~db-name)]
+     (jdbc/with-naming-strategy *naming-strategy*
+       (jdbc/with-connection (:spec *connection*)
+         ~@body))))
 
 (defn wrap-connection
-  "Wraps a connection to `db-spec` around the Ring `handler`"
-  [handler db-spec]
+  "Wraps a connection to `db-name` around the Ring `handler`"
+  [handler db-name]
   (fn [request]
-    (with-connection db-spec
+    (with-connection db-name
       (handler request))))
