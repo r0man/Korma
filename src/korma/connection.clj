@@ -1,5 +1,6 @@
 (ns korma.connection
   (:require [clojure.java.jdbc :as jdbc]
+            [clojure.set :refer [rename-keys]]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
             [korma.util :as util]))
@@ -22,7 +23,7 @@
 (defmethod connection-spec :mysql [db-url]
   (let [url (util/parse-db-url db-url)]
     (-> (assoc url :classname "com.mysql.jdbc.Driver")
-        (assoc-in [:spec :user] (:username (:spec url))))))
+        (update-in [:spec] #(rename-keys %1 {:username :user})))))
 
 (defmethod connection-spec :oracle [db-url]
   (let [url (util/parse-db-url db-url)]

@@ -22,7 +22,9 @@
     (is (= {:profileSQL "true"} (:params spec)))
     (let [spec (:spec spec)]
       (is (= "mysql" (:subprotocol spec)))
-      (is (= "//localhost/korma?profileSQL=true" (:subname spec)))))
+      (is (= "//localhost/korma?profileSQL=true" (:subname spec)))
+      (is (= "tiger" (:user spec))) ; MySQL needs :user key
+      (is (= "scotch" (:password spec)))))
   (let [spec (connection-spec "postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
     (is (= "org.postgresql.Driver" (:classname spec)))
     (is (= :jdbc (:pool spec)))
@@ -35,7 +37,9 @@
     (is (= {:ssl "true"} (:params spec)))
     (let [spec (:spec spec)]
       (is (= "postgresql" (:subprotocol spec)))
-      (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))))
+      (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))
+    (is (= "tiger" (:username spec)))
+    (is (= "scotch" (:password spec)))))
   (let [spec (connection-spec "sqlite://tmp/korma.sqlite")]
     (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= :jdbc (:pool spec)))
