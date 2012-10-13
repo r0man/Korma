@@ -31,6 +31,13 @@
   (assoc (util/parse-db-url db-url)
     :classname "com.mysql.jdbc.Driver"))
 
+(defmethod connection-spec :oracle [db-url]
+  (let [{:keys [server-name server-port] :as url} (util/parse-db-url db-url)]
+    (assoc url
+      :classname "oracle.jdbc.driver.OracleDriver"
+      :subprotocol "oracle:thin"
+      :subname (str ":" (:user url) "/" (:password url) "@" server-name (if server-port (str ":" server-port)) ":" (:db url)))))
+
 (defmethod connection-spec :postgresql [db-url]
   (assoc (util/parse-db-url db-url)
     :classname "org.postgresql.Driver"))
