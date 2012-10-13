@@ -4,6 +4,10 @@
 (defn illegal-argument-exception [format-message & format-args]
   (throw (IllegalArgumentException. (apply format format-message format-args))))
 
+(defn invoke-constructor [clazz & args]
+  (clojure.lang.Reflector/invokeConstructor
+   (Class/forName (str clazz)) (into-array args)))
+
 (defmacro defn-memo
   "Just like defn, but memoizes the function using clojure.core/memoize"
   [fn-name & defn-stuff]
@@ -27,24 +31,24 @@
            (apply hash-map)))
 
 (defn parse-db-url
-  "Parse the database url `s` and return a clojure.java.jdbc and Ring
-  compatible map."
+  "Parse the database url `s` and return a Ring compatible map."
   [s]
-  (if-let [matches (re-matches #"(jdbc:)?([^:]+)://(([^:]+):([^@]+)@)?(([^:/]+)(:([0-9]+))?((/([^?]*))(\?(.*))?))" (str s))]
-    (let [db (nth matches 12)
-          scheme (nth matches 2)
-          server-name (nth matches 7)
-          server-port (parse-integer (nth matches 9))]
+  (if-let [matches (re-matches #"(([^:]+):)?([^:]+)://(([^:]+):([^@]+)@)?(([^:/]+)(:([0-9]+))?((/([^?]*))(\?(.*))?))" (str s))]
+    (let [db (nth matches 13)
+          scheme (keyword (nth matches 3))
+          server-name (nth matches 8)
+          server-port (parse-integer (nth matches 10))
+          query-string (nth matches 15)]
       {:db db
-       :host (nth matches 7)
-       :password (nth matches 5)
-       :port server-port
+       :params (parse-params query-string)
+       :password (nth matches 6)
+       :pool (keyword (or (nth matches 2) :jdbc))
+       :query-string query-string
        :scheme scheme
        :server-name server-name
        :server-port server-port
-       :subname (str "//" server-name (if server-port (str ":" server-port)) "/" db)
-       :subprotocol scheme
-       :uri (nth matches 11)
-       :user (nth matches 4)
-       :params (parse-params (nth matches 14))
-       :query-string (nth matches 14)})))
+       :subname (str "//" server-name (if server-port (str ":" server-port)) "/" db (if-not (blank? query-string) (str "?" query-string)))
+       :subprotocol (name scheme)
+       :uri (nth matches 12)
+       :user (nth matches 5)})
+    (illegal-argument-exception "Can't parse database connection url %s:" s)))
