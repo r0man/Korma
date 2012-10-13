@@ -34,7 +34,7 @@
   "Parse the JDBC subprotocol from `db-url`."
   [db-url]
   (if-let [matches (re-matches #"(([^:]+):)?([^:/]+):.+" (str db-url))]
-    (keyword (nth matches 3))
+    (nth matches 3)
     (illegal-argument-exception "Can't parse JDBC subprotocol: %s" db-url)))
 
 (defn parse-db-url
@@ -53,7 +53,7 @@
        :server-name server-name
        :server-port server-port
        :subname (str "//" server-name (if server-port (str ":" server-port)) "/" db (if-not (blank? query-string) (str "?" query-string)))
-       :subprotocol (keyword (nth matches 3))
+       :subprotocol (nth matches 3)
        :uri (nth matches 12)
        :user (nth matches 5)})
     (illegal-argument-exception "Can't parse database connection url %s:" s)))

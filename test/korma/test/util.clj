@@ -21,17 +21,17 @@
     (is (thrown? IllegalArgumentException (parse-subprotocol db-url))))
   (are [db-url subprotocol]
        (is (= subprotocol (parse-subprotocol db-url)))
-       "bonecp:mysql://localhost/korma" :mysql
-       "c3p0:mysql://localhost/korma" :mysql
-       "jdbc:mysql://localhost/korma" :mysql
-       "mysql://localhost/korma" :mysql))
+       "bonecp:mysql://localhost/korma" "mysql"
+       "c3p0:mysql://localhost/korma" "mysql"
+       "jdbc:mysql://localhost/korma" "mysql"
+       "mysql://localhost/korma" "mysql"))
 
 (deftest test-parse-db-url
   (doseq [url [nil "" "x"]]
     (is (thrown? IllegalArgumentException (parse-db-url url))))
   (let [spec (parse-db-url "postgresql://localhost:5432/korma")]
     (is (= :jdbc (:pool spec)))
-    (is (= :postgresql (:subprotocol spec)))
+    (is (= "postgresql" (:subprotocol spec)))
     (is (= "localhost" (:server-name spec)))
     (is (= 5432 (:server-port spec)))
     (is (= "korma" (:db spec)))
@@ -40,7 +40,7 @@
     (is (= {} (:params spec))))
   (let [spec (parse-db-url "postgresql://tiger:scotch@localhost:5432/korma?a=1&b=2")]
     (is (= :jdbc (:pool spec)))
-    (is (= :postgresql (:subprotocol spec)))
+    (is (= "postgresql" (:subprotocol spec)))
     (is (= "tiger" (:user spec)))
     (is (= "scotch" (:password spec)))
     (is (= "localhost" (:server-name spec)))
@@ -51,7 +51,7 @@
     (is (= {:a "1" :b "2"} (:params spec))))
   (let [spec (parse-db-url "c3p0:postgresql://localhost/korma")]
     (is (= :c3p0 (:pool spec)))
-    (is (= :postgresql (:subprotocol spec)))
+    (is (= "postgresql" (:subprotocol spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
     (is (nil?  (:port spec)))

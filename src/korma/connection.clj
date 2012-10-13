@@ -25,7 +25,7 @@
 
 (defmulti connection-spec
   "Parse `db-url` and return the connection spec."
-  (fn [db-url] (util/parse-subprotocol db-url)))
+  (fn [db-url] (keyword (util/parse-subprotocol db-url))))
 
 (defmethod connection-spec :mysql [db-url]
   (assoc (util/parse-db-url db-url)
