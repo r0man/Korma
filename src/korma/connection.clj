@@ -2,7 +2,7 @@
   (:require [clojure.java.jdbc :as jdbc]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
-            [korma.util :refer [defn-memo invoke-constructor illegal-argument-exception parse-db-url parse-integer parse-params]]))
+            [korma.util :as util]))
 
 (def ^:dynamic *bone-cp-settings* {})
 
@@ -21,21 +21,21 @@
   "Lookup the JDBC connection url for `db-name` via environ."
   [db-name]
   (or (env db-name)
-      (illegal-argument-exception "Can't find connection url: %s" db-name)))
+      (util/illegal-argument-exception "Can't find connection url: %s" db-name)))
 
 (defmulti connection-spec
   "Parse `db-url` and return the connection spec."
   (fn [db-url]
     (if-let [matches (re-matches #"(([^:]+):)?([^:/]+):.+" db-url)]
       (keyword (nth matches 3))
-      (illegal-argument-exception "Can't parse connection spec: %s" db-url))))
+      (util/illegal-argument-exception "Can't parse connection spec: %s" db-url))))
 
 (defmethod connection-spec :mysql [db-url]
-  (assoc (parse-db-url db-url)
+  (assoc (util/parse-db-url db-url)
     :classname "com.mysql.jdbc.Driver"))
 
 (defmethod connection-spec :postgresql [db-url]
-  (assoc (parse-db-url db-url)
+  (assoc (util/parse-db-url db-url)
     :classname "org.postgresql.Driver"))
 
 (defmethod connection-spec :sqlite [db-url]
@@ -44,30 +44,30 @@
      :pool (keyword (or (nth matches 2) :jdbc))
      :subname (nth matches 4)
      :subprotocol (nth matches 3)
-     :params (parse-params (nth matches 5))}))
+     :params (util/parse-params (nth matches 5))}))
 
 (defmulti connection-pool
   "Returns the connection pool for `db-spec`."
   (fn [db-spec] (:pool db-spec)))
 
 (defmethod connection-pool :bonecp [db-spec]
-  (let [config (invoke-constructor "com.jolbox.bonecp.BoneCPConfig")]
+  (let [config (util/invoke-constructor "com.jolbox.bonecp.BoneCPConfig")]
     (.setJdbcUrl config (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
     (.setUsername config (:user db-spec))
     (.setPassword config (:password db-spec))
-    {:datasource (invoke-constructor "com.jolbox.bonecp.BoneCPDataSource" config)}))
+    {:datasource (util/invoke-constructor "com.jolbox.bonecp.BoneCPDataSource" config)}))
 
 (defmethod connection-pool :c3p0 [db-spec]
   (let [params (merge *c3p0-settings* (:params db-spec))
-        datasource (invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
-    (.setAcquireRetryAttempts datasource (parse-integer (:acquire-retry-attempts params)))
+        datasource (util/invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
+    (.setAcquireRetryAttempts datasource (util/parse-integer (:acquire-retry-attempts params)))
     (.setDriverClass datasource (:classname db-spec))
     (.setInitialPoolSize datasource (:initial-pool-size params))
     (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol db-spec)) ":" (:subname db-spec)))
-    (.setMaxIdleTime datasource (parse-integer (:max-idle-time params)))
-    (.setMaxIdleTimeExcessConnections datasource (parse-integer (:max-idle-time-excess-connections params)))
-    (.setMaxPoolSize datasource (parse-integer (:max-pool-size params)))
-    (.setMinPoolSize datasource (parse-integer (:min-pool-size params)))
+    (.setMaxIdleTime datasource (util/parse-integer (:max-idle-time params)))
+    (.setMaxIdleTimeExcessConnections datasource (util/parse-integer (:max-idle-time-excess-connections params)))
+    (.setMaxPoolSize datasource (util/parse-integer (:max-pool-size params)))
+    (.setMinPoolSize datasource (util/parse-integer (:min-pool-size params)))
     (.setPassword datasource (:password db-spec))
     (.setUser datasource (:user db-spec))
     {:datasource datasource}))
@@ -76,10 +76,9 @@
   "Returns the database connection for `db-name`."
   (let [db-spec (connection-spec (connection-url db-name))]
     (if (= :jdbc (:pool db-spec))
-      db-spec
-      (connection-pool db-spec))))
+      db-spec (connection-pool db-spec))))
 
-(defn-memo cached-connection [db-name]
+(util/defn-memo cached-connection [db-name]
   "Returns the cached database connection for `db-name`."
   (connection db-name))
 
