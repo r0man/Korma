@@ -13,7 +13,7 @@
   (let [spec (connection-spec "mysql://tiger:scotch@localhost/korma?profileSQL=true")]
     (is (= :jdbc (:pool spec)))
     (is (= "com.mysql.jdbc.Driver" (:classname spec)))
-    (is (= "mysql" (:subprotocol spec)))
+    (is (= :mysql (:subprotocol spec)))
     (is (= "//localhost/korma?profileSQL=true" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
@@ -25,7 +25,7 @@
   (let [spec (connection-spec "bonecp:postgresql://tiger:scotch@localhost:5432/korma?ssl=true")]
     (is (= :bonecp (:pool spec)))
     (is (= "org.postgresql.Driver" (:classname spec)))
-    (is (= "postgresql" (:subprotocol spec)))
+    (is (= :postgresql (:subprotocol spec)))
     (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
     (is (= 5432 (:server-port spec)))
