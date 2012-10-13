@@ -61,10 +61,13 @@
     (is (instance? ComboPooledDataSource (:datasource connection)))
     (is (= connection (cached-connection (:vendor *database*))))))
 
-(database-test test-with-connection
-  (with-connection (:vendor *database*)
+(deftest test-with-connection-jdbc
+  (with-connection "jdbc:mysql://korma:korma@localhost/korma"
     (is (instance? Connection (jdbc/connection))))
-  (is (thrown? IllegalArgumentException (with-connection :unknown))))
+  (with-connection "jdbc:postgresql://korma:korma@localhost/korma"
+    (is (instance? Connection (jdbc/connection))))
+  (with-connection "jdbc:sqlite://tmp/korma.sqlite"
+    (is (instance? Connection (jdbc/connection)))))
 
 (deftest test-with-connection-bonecp
   (with-connection "bonecp:mysql://korma:korma@localhost/korma"
