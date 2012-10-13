@@ -32,11 +32,12 @@
     :classname "com.mysql.jdbc.Driver"))
 
 (defmethod connection-spec :oracle [db-url]
-  (let [{:keys [server-name server-port] :as url} (util/parse-db-url db-url)]
+  (let [url (util/parse-db-url db-url)]
     (assoc url
       :classname "oracle.jdbc.driver.OracleDriver"
       :subprotocol "oracle:thin"
-      :subname (str ":" (:user url) "/" (:password url) "@" server-name (if server-port (str ":" server-port)) ":" (:db url)))))
+      :subname (str ":" (:user url) "/" (:password url) "@" (util/format-server url)
+                    ":" (:db url)))))
 
 (defmethod connection-spec :postgresql [db-url]
   (assoc (util/parse-db-url db-url)
@@ -55,7 +56,10 @@
     (assoc url
       :classname "com.microsoft.sqlserver.jdbc.SQLServerDriver"
       :subprotocol "sqlserver"
-      :subname (str "//" (:server-name url) ":" (:server-port url) ";database=" (:db url) ";user=" (:user url) ";password=" (:password url)))))
+      :subname (str "//" (util/format-server url) ";"
+                    "database=" (:db url) ";"
+                    "user=" (:user url) ";"
+                    "password=" (:password url)))))
 
 (defmulti connection-pool
   "Returns the connection pool for `db-spec`."

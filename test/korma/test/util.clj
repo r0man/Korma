@@ -2,6 +2,14 @@
   (:use clojure.test
         korma.util))
 
+(deftest test-format-server
+  (are [server expected]
+       (is (= expected (format-server server)))
+       {:server-name "example.com"}
+       "example.com"
+       {:server-name "example.com" :server-port 123}
+       "example.com:123"))
+
 (deftest test-parse-integer
   (is (nil? (parse-integer nil)))
   (is (nil? (parse-integer "")))

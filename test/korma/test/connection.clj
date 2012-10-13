@@ -50,7 +50,7 @@
     (is (= :jdbc (:pool spec)))
     (is (= "com.microsoft.sqlserver.jdbc.SQLServerDriver" (:classname spec)))
     (is (= "sqlserver" (:subprotocol spec)))
-    (is (= "//localhost:;database=korma;user=tiger;password=scotch" (:subname spec)))
+    (is (= "//localhost;database=korma;user=tiger;password=scotch" (:subname spec)))
     (is (= "localhost" (:server-name spec)))
     (is (nil? (:server-port spec)))
     (is (= "tiger" (:user spec)))

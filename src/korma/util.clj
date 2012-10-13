@@ -8,6 +8,11 @@
   (clojure.lang.Reflector/invokeConstructor
    (Class/forName (str clazz)) (into-array args)))
 
+(defn format-server [url]
+  (str (:server-name url)
+       (if (:server-port url)
+         (str ":" (:server-port url)))))
+
 (defmacro defn-memo
   "Just like defn, but memoizes the function using clojure.core/memoize"
   [fn-name & defn-stuff]
