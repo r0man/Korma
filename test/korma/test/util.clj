@@ -16,9 +16,19 @@
        "a=1" {:a "1"}
        "a=1&b=2" {:a "1" :b "2"}))
 
+(deftest test-parse-subprotocol
+  (doseq [db-url [nil "" "x"]]
+    (is (thrown? IllegalArgumentException (parse-subprotocol db-url))))
+  (are [db-url subprotocol]
+       (is (= subprotocol (parse-subprotocol db-url)))
+       "bonecp:mysql://localhost/korma" :mysql
+       "c3p0:mysql://localhost/korma" :mysql
+       "jdbc:mysql://localhost/korma" :mysql
+       "mysql://localhost/korma" :mysql))
+
 (deftest test-parse-db-url
   (doseq [url [nil "" "x"]]
-    (is (thrown? IllegalArgumentException (parse-db-url nil))))
+    (is (thrown? IllegalArgumentException (parse-db-url url))))
   (let [spec (parse-db-url "postgresql://localhost:5432/korma")]
     (is (= :jdbc (:pool spec)))
     (is (= :postgresql (:scheme spec)))

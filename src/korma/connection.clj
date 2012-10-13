@@ -25,10 +25,7 @@
 
 (defmulti connection-spec
   "Parse `db-url` and return the connection spec."
-  (fn [db-url]
-    (if-let [matches (re-matches #"(([^:]+):)?([^:/]+):.+" db-url)]
-      (keyword (nth matches 3))
-      (util/illegal-argument-exception "Can't parse connection spec: %s" db-url))))
+  (fn [db-url] (util/parse-subprotocol db-url)))
 
 (defmethod connection-spec :mysql [db-url]
   (assoc (util/parse-db-url db-url)

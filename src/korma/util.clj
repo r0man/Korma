@@ -30,6 +30,13 @@
            (mapcat #(vector (keyword (first %1)) (second %1)))
            (apply hash-map)))
 
+(defn parse-subprotocol
+  "Parse the JDBC subprotocol from `db-url`."
+  [db-url]
+  (if-let [matches (re-matches #"(([^:]+):)?([^:/]+):.+" (str db-url))]
+    (keyword (nth matches 3))
+    (illegal-argument-exception "Can't parse JDBC subprotocol: %s" db-url)))
+
 (defn parse-db-url
   "Parse the database url `s` and return a Ring compatible map."
   [s]
