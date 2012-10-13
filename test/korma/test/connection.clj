@@ -68,11 +68,19 @@
 
 (deftest test-with-connection-bonecp
   (with-connection "bonecp:mysql://korma:korma@localhost/korma"
-    (is (instance? Connection (jdbc/connection))))
+    (is (instance? ConnectionHandle (jdbc/connection))))
   (with-connection "bonecp:postgresql://korma:korma@localhost/korma"
-    (is (instance? Connection (jdbc/connection))))
+    (is (instance? ConnectionHandle (jdbc/connection))))
   (with-connection "bonecp:sqlite://tmp/korma.sqlite"
-    (is (instance? Connection (jdbc/connection)))))
+    (is (instance? ConnectionHandle (jdbc/connection)))))
+
+(deftest test-with-connection-c3p0
+  (with-connection "c3p0:mysql://korma:korma@localhost/korma"
+    (is (instance? NewProxyConnection (jdbc/connection))))
+  (with-connection "c3p0:postgresql://korma:korma@localhost/korma"
+    (is (instance? NewProxyConnection (jdbc/connection))))
+  (with-connection "c3p0:sqlite://tmp/korma.sqlite"
+    (is (instance? NewProxyConnection (jdbc/connection)))))
 
 (database-test test-wrap-connection
   ((wrap-connection
