@@ -38,8 +38,8 @@
     (let [spec (:spec spec)]
       (is (= "postgresql" (:subprotocol spec)))
       (is (= "//localhost:5432/korma?ssl=true" (:subname spec)))
-    (is (= "tiger" (:username spec)))
-    (is (= "scotch" (:password spec)))))
+      (is (= "tiger" (:username spec)))
+      (is (= "scotch" (:password spec)))))
   (let [spec (connection-spec "sqlite://tmp/korma.sqlite")]
     (is (= "org.sqlite.JDBC" (:classname spec)))
     (is (= :jdbc (:pool spec)))
@@ -127,6 +127,18 @@
   (with-connection "c3p0:sqlite://tmp/korma.sqlite"
     (is *connection*)
     (is (instance? NewProxyConnection (jdbc/connection)))))
+
+(comment
+  (database-test test-with-connection
+    (doseq [pool [:bonecp :c3p0 :jdbc]]
+      (with-connection (clojure.string/replace (:url *database*) #"^([^:]+)" (name pool))
+        (is *connection*)
+        (is (instance?
+             (condp = pool
+               :bonecp ConnectionHandle
+               :c3p0 NewProxyConnection
+               :jdbc Connection)
+             (jdbc/connection)))))))
 
 (database-test test-wrap-connection
   ((wrap-connection
