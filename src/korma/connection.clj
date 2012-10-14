@@ -82,7 +82,7 @@
     (assoc db-spec :spec {:datasource datasource})))
 
 (defn connection [db-name]
-  "Returns the db-name connection for `db-name`."
+  "Returns the database connection for `db-name`."
   (cond
    (keyword? db-name)
    (connection (connection-url db-name))
@@ -93,7 +93,7 @@
    :else db-name))
 
 (util/defn-memo cached-connection [db-name]
-  "Returns the cached db-name connection for `db-name`."
+  "Returns the cached database connection for `db-name`."
   (connection db-name))
 
 (defmacro with-connection
