@@ -69,16 +69,15 @@
 (defmethod connection-pool :c3p0 [db-spec]
   (let [params (:params db-spec)
         datasource (util/invoke-constructor "com.mchange.v2.c3p0.ComboPooledDataSource")]
-    (.setDriverClass datasource (:classname db-spec))
+    (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol (:spec db-spec))) ":" (:subname (:spec db-spec))))
+    (.setUser datasource (:username db-spec))
+    (.setPassword datasource (:password db-spec))
     (.setAcquireRetryAttempts datasource (util/parse-integer (or (:acquire-retry-attempts params) 1))) ; TODO: Set back to 30
     (.setInitialPoolSize datasource (util/parse-integer (or (:initial-pool-size params) 3)))
-    (.setJdbcUrl datasource (str "jdbc:" (name (:subprotocol (:spec db-spec))) ":" (:subname (:spec db-spec))))
     (.setMaxIdleTime datasource (util/parse-integer (or (:max-idle-time params) (* 3 60 60))))
     (.setMaxIdleTimeExcessConnections datasource (util/parse-integer (or (:max-idle-time-excess-connections params) (* 30 60))))
     (.setMaxPoolSize datasource (util/parse-integer (or (:max-pool-size params) 15)))
     (.setMinPoolSize datasource (util/parse-integer (or (:min-pool-size params) 3)))
-    (.setPassword datasource (:password db-spec))
-    (.setUser datasource (:username db-spec))
     (assoc db-spec :spec {:datasource datasource})))
 
 (defn connection [db-name]
