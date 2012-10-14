@@ -1,6 +1,7 @@
 (ns korma.connection
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.set :refer [rename-keys]]
+            [clojure.string :refer [split]]
             [environ.core :refer [env]]
             [inflections.core :refer [dasherize underscore]]
             [korma.util :as util]))
@@ -89,6 +90,11 @@
    (let [db-spec (connection-spec db-name)]
      (if (= :jdbc (:pool db-spec))
        db-spec (connection-pool db-spec)))
+   (symbol? db-name)
+   (let [[ns sym] (map symbol (split (str db-name) #"/"))]
+     (if-let [var (ns-resolve ns sym)]
+       (if (fn? @var)
+         (@var) @var)))
    :else db-name))
 
 (util/defn-memo cached-connection [db-name]
